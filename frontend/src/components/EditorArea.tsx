@@ -1,0 +1,83 @@
+import { Editor } from '@monaco-editor/react'
+import { editor } from 'monaco-editor';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import io from 'socket.io-client';
+import { Languages } from '../types/language-types';
+
+
+
+const EditorArea = () => {
+    const socketRef = useRef<SocketIOClient.Socket | null>(null);
+    const [language, setLanguage] = useState<Languages>(Languages.Javascript);
+    console.log(language);
+    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+
+    const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
+        const socket = socketRef.current;
+        if(!socket) return;
+        const newLang = e.target.value;
+        setLanguage(newLang as Languages);
+        socket?.emit("langChange",newLang);
+    };
+    const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
+        editorRef.current = editor;
+        const socket = socketRef.current;
+        if(!socket) return;
+        editor.onDidChangeModelContent(() => {
+            const value = editor.getValue();
+            socket?.emit("codeChange", value);
+        });
+
+    }
+
+
+    useEffect(() => {
+        const soc = io("http://localhost:5001");
+        socketRef.current = soc;
+        soc?.on("connect", () => console.log("Connected", soc.id));
+        soc?.on("disconnect", () => console.log("Disconnected"));
+        soc?.on("codeChange", (newCode: string) => {
+            const editor = editorRef.current;
+            if (!editor) return;
+            const selection = editor.getSelection();
+            if (editor.getValue() !== newCode) {
+                editor.setValue(newCode);
+                if (selection) editor.setSelection(selection);
+            }
+        })
+
+        soc?.on("langChange", (newLang: string)=>{
+            const editor = editorRef.current;
+            if (!editor) return;
+            const model = editor.getModel();
+            if (model?.getLanguageId() !== newLang) {
+                setLanguage(newLang as Languages);
+            }
+        })
+
+
+
+
+        return () => {
+            soc?.disconnect();
+        }
+    }, [])
+    return (
+        <div>
+            <select onChange={changeLanguage}>
+                <option value={'javascript'} selected={language===Languages.Javascript}>Javascript</option>
+                <option value={'python'} selected={language===Languages.Python}>Python</option>
+                <option value={'java'}  selected={language===Languages.Java}>Java</option>
+            </select>
+            <Editor
+                height="90vh"
+                language={language}
+                defaultValue="// some comment"
+                theme="vs-dark"
+                onMount={handleEditorDidMount}
+            />
+        </div>
+    )
+}
+
+export default EditorArea
