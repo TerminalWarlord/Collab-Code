@@ -1,11 +1,20 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+import express from "express";
+import cors from "cors";
+import { router } from "./routes/auth.js";
 
-const server = createServer();
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 5001;
+
+
+const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // or 3000 if CRA, depends on your frontend port
-    methods: ["GET", "POST"]
+    origin: "*"
   }
 });
 
@@ -29,6 +38,9 @@ io.on("connection", (client) => {
   });
 });
 
-server.listen(5001, () => {
-  console.log("Server running on http://localhost:5001");
+
+app.use(router);
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
