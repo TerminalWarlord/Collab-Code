@@ -11,9 +11,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "";
 export const loginController = async (req: Request, res: Response) => {
     const body = req.body;
     if (!body) {
-        return res.json({
+        return res.status(401).json({
             message: "Enter your email and password"
-        }).status(401);
+        });
     }
     const schema = z.object({
         email: z.email(),
@@ -22,16 +22,16 @@ export const loginController = async (req: Request, res: Response) => {
 
     const parsedData = await schema.safeParseAsync(body);
     if (!parsedData.success) {
-        return res.json({
+        return res.status(401).json({
             message: "Invalid email or password"
-        }).status(401);
+        });
     }
     const { email, password } = parsedData.data;
     const { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
     if (!rows || rows.length < 1) {
-        return res.json({
+        return res.status(404).json({
             message: "Email doesn't exist in our database!"
-        }).status(404);
+        });
     }
     const isPasswordValid = await bcrypt.compare(password, rows[0].password);
     if (isPasswordValid) {
@@ -44,9 +44,9 @@ export const loginController = async (req: Request, res: Response) => {
         })
     }
     else {
-        return res.json({
+        return res.status(401).json({
             message: "Incorrect password",
-        }).status(401);
+        });
     }
 }
 
