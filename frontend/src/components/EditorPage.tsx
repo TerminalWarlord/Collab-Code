@@ -1,13 +1,14 @@
+import { Languages } from '@/types/language-types';
 import { Editor } from '@monaco-editor/react'
 import { editor } from 'monaco-editor';
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client';
-import { Languages } from '../types/language-types';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react';
+import {io,Socket} from 'socket.io-client';
+
 
 
 
 const EditorArea = () => {
-    const socketRef = useRef<SocketIOClient.Socket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
     const [language, setLanguage] = useState<Languages>(Languages.Javascript);
     console.log(language);
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
