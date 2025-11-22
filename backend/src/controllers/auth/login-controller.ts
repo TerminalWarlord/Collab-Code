@@ -55,21 +55,29 @@ export const loginController = async (req: Request, res: Response) => {
 export const middleware = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.token;
     if (!token || typeof token !== 'string') {
-        return res.json({
+        return res.status(403).json({
             message: "Unauthorized!"
-        }).status(403);
+        });
     }
-    const { userId } = jwt.verify(token, JWT_SECRET) as { userId: number };
-    if (!userId) {
-        return res.json({
-            message: "Invalid token!"
-        }).status(401);
+    try {
+        const { userId } = jwt.verify(token, JWT_SECRET) as { userId: number };
+        if (!userId) {
+            return res.status(401).json({
+                message: "Invalid token!"
+            });
+        }
+        const { rows } = await pool.query("SELECT email FROM users WHERE id=$1", [userId])
+        if (!rows || rows.length < 1) {
+            return res.status(401).json({
+                message: "Invalid user!"
+            });
+        }
+        next();
     }
-    const { rows } = await pool.query("SELECT email FROM users WHERE id=$1", [userId])
-    if(!rows || rows.length<1){
-        return res.json({
-            message: "Invalid user!"
-        }).status(401);
+    catch {
+        return res.status(401).json({
+            message: "Invalid Token!"
+        });
     }
-    next();
+
 }

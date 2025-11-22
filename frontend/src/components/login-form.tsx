@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import type { FormEvent } from "react"
 import { login, type UserLoginData } from "@/api/auth"
+import { toast } from "sonner"
 
 export function LoginFormUI({
   className,
@@ -27,9 +28,8 @@ export function LoginFormUI({
     try{
       await login(formData)
     }
-    catch(err){
-      // TODO: add toaster
-      console.log(err)
+    catch(err: any){
+      toast("Failed: "+ err?.message)
     }
   }
   return (

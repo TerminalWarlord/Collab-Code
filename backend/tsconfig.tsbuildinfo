@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/controllers/auth/login-controller.ts","./src/controllers/auth/register-controller.ts","./src/lib/db.ts","./src/routes/auth.ts","./src/types/language-types.ts","./src/utils/pubsub.ts","./src/utils/verifytoken.ts"],"version":"5.9.3"}

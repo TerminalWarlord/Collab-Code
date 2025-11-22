@@ -2,7 +2,7 @@ import { Languages } from '@/types/language-types';
 import { Editor } from '@monaco-editor/react'
 import { editor } from 'monaco-editor';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
-import {io,Socket} from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 
 
@@ -15,15 +15,15 @@ const EditorArea = () => {
 
     const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
         const socket = socketRef.current;
-        if(!socket) return;
+        if (!socket) return;
         const newLang = e.target.value;
         setLanguage(newLang as Languages);
-        socket?.emit("langChange",newLang);
+        socket?.emit("langChange", newLang);
     };
     const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
         editorRef.current = editor;
         const socket = socketRef.current;
-        if(!socket) return;
+        if (!socket) return;
         editor.onDidChangeModelContent(() => {
             const value = editor.getValue();
             socket?.emit("codeChange", value);
@@ -33,9 +33,22 @@ const EditorArea = () => {
 
 
     useEffect(() => {
-        const soc = io("http://localhost:5001");
+        // TODO: pass roomId and JWT
+        const jwt = localStorage.getItem("token");
+        const soc = io("http://localhost:5001", {
+            auth: {
+                token: jwt,
+            }
+        });
         socketRef.current = soc;
-        soc?.on("connect", () => console.log("Connected", soc.id));
+
+
+        soc?.on("connect", () => {
+            soc?.emit("joinRoom", {
+                roomId: "1"
+            });
+        });
+        // 
         soc?.on("disconnect", () => console.log("Disconnected"));
         soc?.on("codeChange", (newCode: string) => {
             const editor = editorRef.current;
@@ -47,13 +60,18 @@ const EditorArea = () => {
             }
         })
 
-        soc?.on("langChange", (newLang: string)=>{
+        soc?.on("langChange", (newLang: string) => {
             const editor = editorRef.current;
             if (!editor) return;
             const model = editor.getModel();
             if (model?.getLanguageId() !== newLang) {
                 setLanguage(newLang as Languages);
             }
+        })
+
+        // TODO: handle validation failure
+        soc?.on("connect_error", (err)=>{
+            console.error("Connection failed:", err.message);
         })
 
 
@@ -66,9 +84,9 @@ const EditorArea = () => {
     return (
         <div>
             <select onChange={changeLanguage}>
-                <option value={'javascript'} selected={language===Languages.Javascript}>Javascript</option>
-                <option value={'python'} selected={language===Languages.Python}>Python</option>
-                <option value={'java'}  selected={language===Languages.Java}>Java</option>
+                <option value={'javascript'} selected={language === Languages.Javascript}>Javascript</option>
+                <option value={'python'} selected={language === Languages.Python}>Python</option>
+                <option value={'java'} selected={language === Languages.Java}>Java</option>
             </select>
             <Editor
                 height="90vh"

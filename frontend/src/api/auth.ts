@@ -1,6 +1,6 @@
-const BACKEND_URL = import.meta.env.BACKEND_URL || "http://localhost:5001";
 import axios from "axios";
 
+const BACKEND_URL = import.meta.env.BACKEND_URL || "http://localhost:5001";
 
 export interface UserLoginData{
     email: string;
@@ -13,7 +13,8 @@ export const login = async (formData: UserLoginData)=>{
         const {token} = res.data;
         localStorage.setItem("token", token);
     }
-    catch(err){
-        throw Error("Failed to login!")
+    catch(err: any){
+        const message =  err?.response?.data?.message || err?.message || "Unknown Error"
+        throw Error(message)
     }
 }
